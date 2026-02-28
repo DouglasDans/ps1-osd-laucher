@@ -96,18 +96,16 @@ def run(screen: pygame.Surface, apps: list[tuple[str, str]]) -> None:
 
 
 def _launch(cmd: str) -> pygame.Surface:
-    # Libera DRM e ALSA antes de lançar o app
-    pygame.mixer.quit()
+    # Libera o DRM antes de lançar o app
     pygame.display.quit()
 
     # Remove variáveis SDL do ambiente — são específicas do pygame
-    # e interferem em apps externos (ex: SDL_AUDIODRIVER=alsa bloqueia ALSA pro RetroArch)
+    # e interferem em apps externos
     clean_env = {k: v for k, v in os.environ.items() if not k.startswith("SDL_")}
     subprocess.run(cmd, shell=True, env=clean_env)
 
-    # Reinicializa display e mixer depois que o app fechar
+    # Reinicializa o display depois que o app fechar
     pygame.display.init()
-    pygame.mixer.init()
     flags = pygame.FULLSCREEN if IS_PI else 0
     screen = pygame.display.set_mode((WIDTH, HEIGHT), flags)
     pygame.mouse.set_visible(False)

@@ -9,7 +9,6 @@ User=douglasdans
 WorkingDirectory=/home/douglasdans/ps1-osd-laucher
 Environment=SDL_VIDEODRIVER=kmsdrm
 Environment=SDL_FBDEV=/dev/fb0
-Environment=SDL_AUDIODRIVER=alsa
 ExecStartPre=-/usr/bin/git -C /home/douglasdans/ps1-osd-laucher pull
 ExecStart=/usr/bin/python3 /home/douglasdans/ps1-osd-laucher/launcher.py
 Restart=always

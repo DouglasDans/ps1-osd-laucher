@@ -41,7 +41,10 @@ def main() -> None:
 
     play_intro(INTRO_VIDEO)
 
-    pygame.init()
+    # Inicializa só o necessário — sem mixer para não ocupar o ALSA
+    # (o menu não tem som; mpv cuida do áudio da intro por conta própria)
+    pygame.display.init()
+    pygame.font.init()
     flags = pygame.FULLSCREEN if IS_PI else 0
     screen = pygame.display.set_mode((WIDTH, HEIGHT), flags)
     pygame.display.set_caption("PS1 Launcher")
@@ -50,7 +53,8 @@ def main() -> None:
     controller.init()
     run_menu(screen, apps)
 
-    pygame.quit()
+    pygame.display.quit()
+    pygame.font.quit()
 
 
 if __name__ == "__main__":
