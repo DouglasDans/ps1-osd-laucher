@@ -11,6 +11,7 @@ IS_PI = os.path.exists("/dev/fb0")
 
 FONT_PATH = "assets/fonts/PressStart2P.ttf"
 BG_PATH = "assets/ps1-bios.jpg"
+MAIN_MENU_IMG_PATH = "assets/main-menu.png"
 
 WIDTH, HEIGHT = 1920, 1080
 
@@ -49,24 +50,20 @@ def _make_selector_surface() -> pygame.Surface:
     return surf
 
 
-def _draw_main_menu_label(screen: pygame.Surface, font: pygame.font.Font) -> None:
-    label = font.render("MAIN MENU", True, (255, 255, 255))
-    pad_x, pad_y = 20, 14
-    box_w = label.get_width() + pad_x * 2
-    box_h = label.get_height() + pad_y * 2
-    box_x = WIDTH - box_w - 60
-    box_y = 60
-
-    pygame.draw.rect(screen, (30, 60, 160), (box_x, box_y, box_w, box_h))
-    pygame.draw.rect(screen, (100, 140, 255), (box_x, box_y, box_w, box_h), 3)
-    screen.blit(label, (box_x + pad_x, box_y + pad_y))
-
-
 def run(screen: pygame.Surface, apps: list[tuple[str, str]]) -> None:
     font = pygame.font.Font(FONT_PATH, FONT_SIZE)
 
     bg_raw = pygame.image.load(BG_PATH).convert()
     bg = pygame.transform.scale(bg_raw, (WIDTH, HEIGHT))
+
+    _label = font.render("MAIN MENU", True, (255, 255, 255))
+    pad_x, pad_y = 20, 14
+    box_w = _label.get_width() + pad_x * 2
+    box_h = _label.get_height() + pad_y * 4
+    main_menu_img = pygame.transform.scale(
+        pygame.image.load(MAIN_MENU_IMG_PATH).convert(),
+        (box_w, box_h),
+    )
 
     selector_surf = _make_selector_surface()
 
@@ -98,7 +95,7 @@ def run(screen: pygame.Surface, apps: list[tuple[str, str]]) -> None:
                 bg_raw = pygame.image.load(BG_PATH).convert()
                 bg = pygame.transform.scale(bg_raw, (WIDTH, HEIGHT))
 
-        _draw(screen, bg, font, selector_surf, apps, selected)
+        _draw(screen, bg, font, selector_surf, main_menu_img, apps, selected)
         pygame.display.flip()
         clock.tick(30)
 
@@ -129,11 +126,12 @@ def _draw(
     bg: pygame.Surface,
     font: pygame.font.Font,
     selector_surf: pygame.Surface,
+    main_menu_img: pygame.Surface,
     apps: list[tuple[str, str]],
     selected: int,
 ) -> None:
     screen.blit(bg, (0, 0))
-    _draw_main_menu_label(screen, font)
+    screen.blit(main_menu_img, (WIDTH - main_menu_img.get_width() - 60, 60))
 
     for i, (name, _) in enumerate(apps):
         y = ITEM_START_Y + i * ITEM_SPACING
