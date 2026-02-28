@@ -1,4 +1,6 @@
+import glob
 import os
+import random
 import subprocess
 import sys
 
@@ -12,46 +14,38 @@ IS_PI = os.path.exists("/dev/fb0")
 FONT_PATH = "assets/fonts/PressStart2P.ttf"
 BG_PATH = "assets/ps1-bios.jpg"
 MAIN_MENU_IMG_PATH = "assets/main-menu.png"
+SPLASH_DIR = "assets/items-splash"
 
 WIDTH, HEIGHT = 1920, 1080
 
 FONT_SIZE = 42
-ITEM_X = 80           # alinhamento esquerdo, fiel ao PS1
-ITEM_START_Y = 440
-ITEM_SPACING = 180
+FONT_SIZE_SELECTED = 58
+ITEM_X = 200
+ITEM_START_Y = 420
+ITEM_SPACING = 160
 
 COLOR_TEXT = (255, 255, 255)
+COLOR_SHADOW = (0, 0, 0)
+SHADOW_OFFSET = (5, 5)
 
-# Arco-íris do seletor (vermelho → verde → azul → roxo)
-RAINBOW = [
-    (220,  30,  30),
-    (255, 120,   0),
-    (220, 220,   0),
-    (  0, 200,  50),
-    (  0, 200, 220),
-    ( 50,  80, 220),
-    (140,   0, 220),
-]
-
-SELECTOR_H = 80   # altura da faixa do seletor
-SELECTOR_W = 580  # largura da faixa do seletor
+SPLASH_BASE_W = 500
+SPLASH_BASE_H = 120
 
 
-def _make_selector_surface() -> pygame.Surface:
-    surf = pygame.Surface((SELECTOR_W, SELECTOR_H), pygame.SRCALPHA)
-    n = len(RAINBOW)
-    strip_w = SELECTOR_W // n
-    for i, color in enumerate(RAINBOW):
-        x = i * strip_w
-        w = strip_w if i < n - 1 else SELECTOR_W - x
-        s = pygame.Surface((w, SELECTOR_H), pygame.SRCALPHA)
-        s.fill((*color, 190))
-        surf.blit(s, (x, 0))
-    return surf
+def _load_splashes(apps: list) -> list[pygame.Surface]:
+    paths = sorted(glob.glob(f"{SPLASH_DIR}/*.png"))
+    random.shuffle(paths)
+    result = []
+    for i in range(len(apps)):
+        path = paths[i % len(paths)]
+        img = pygame.image.load(path).convert_alpha()
+        result.append(pygame.transform.scale(img, (SPLASH_BASE_W, SPLASH_BASE_H)))
+    return result
 
 
 def run(screen: pygame.Surface, apps: list[tuple[str, str]]) -> None:
     font = pygame.font.Font(FONT_PATH, FONT_SIZE)
+    font_selected = pygame.font.Font(FONT_PATH, FONT_SIZE_SELECTED)
 
     bg_raw = pygame.image.load(BG_PATH).convert()
     bg = pygame.transform.scale(bg_raw, (WIDTH, HEIGHT))
@@ -65,7 +59,7 @@ def run(screen: pygame.Surface, apps: list[tuple[str, str]]) -> None:
         (box_w, box_h),
     )
 
-    selector_surf = _make_selector_surface()
+    splashes = _load_splashes(apps)
 
     selected = 0
     clock = pygame.time.Clock()
@@ -95,7 +89,7 @@ def run(screen: pygame.Surface, apps: list[tuple[str, str]]) -> None:
                 bg_raw = pygame.image.load(BG_PATH).convert()
                 bg = pygame.transform.scale(bg_raw, (WIDTH, HEIGHT))
 
-        _draw(screen, bg, font, selector_surf, main_menu_img, apps, selected)
+        _draw(screen, bg, font, font_selected, main_menu_img, apps, splashes, selected)
         pygame.display.flip()
         clock.tick(30)
 
@@ -125,20 +119,32 @@ def _draw(
     screen: pygame.Surface,
     bg: pygame.Surface,
     font: pygame.font.Font,
-    selector_surf: pygame.Surface,
+    font_selected: pygame.font.Font,
     main_menu_img: pygame.Surface,
     apps: list[tuple[str, str]],
+    splashes: list[pygame.Surface],
     selected: int,
 ) -> None:
     screen.blit(bg, (0, 0))
     screen.blit(main_menu_img, (WIDTH - main_menu_img.get_width() - 60, 60))
 
     for i, (name, _) in enumerate(apps):
-        y = ITEM_START_Y + i * ITEM_SPACING
+        is_selected = (i == selected)
+        splash_surf = splashes[i]
+        splash_w = splash_surf.get_width()
+        splash_h = splash_surf.get_height()
 
-        if i == selected:
-            sel_y = y - (SELECTOR_H - font.get_height()) // 2
-            screen.blit(selector_surf, (ITEM_X - 10, sel_y))
+        y_center = ITEM_START_Y + i * ITEM_SPACING
+        splash_y = y_center - splash_h // 2
 
-        text_surf = font.render(name.upper(), True, COLOR_TEXT)
-        screen.blit(text_surf, (ITEM_X, y))
+        screen.blit(splash_surf, (ITEM_X, splash_y))
+
+        f = font_selected if is_selected else font
+        text = name.upper()
+        text_w, text_h = f.size(text)
+        splash_cx = ITEM_X + splash_w // 2
+        text_x = splash_cx - text_w // 2
+        text_y = splash_y + (splash_h - text_h) // 2
+
+        screen.blit(f.render(text, True, COLOR_SHADOW), (text_x + SHADOW_OFFSET[0], text_y + SHADOW_OFFSET[1]))
+        screen.blit(f.render(text, True, COLOR_TEXT), (text_x, text_y))
