@@ -71,9 +71,15 @@ def run(screen: pygame.Surface, apps: list[tuple[str, str]]) -> None:
 
     selected = 0
     clock = pygame.time.Clock()
+    last_launch_time = 0
+    LAUNCH_COOLDOWN = 500
 
     while True:
+        now = pygame.time.get_ticks()
         for event in pygame.event.get():
+            if now - last_launch_time < LAUNCH_COOLDOWN:
+                continue
+
             action = controller.get_action(event)
 
             if action in (Action.QUIT, Action.BACK):
@@ -87,6 +93,7 @@ def run(screen: pygame.Surface, apps: list[tuple[str, str]]) -> None:
 
             if action == Action.CONFIRM:
                 screen = _launch(apps[selected][1])
+                last_launch_time = pygame.time.get_ticks()
                 bg_raw = pygame.image.load(BG_PATH).convert()
                 bg = pygame.transform.scale(bg_raw, (WIDTH, HEIGHT))
 
