@@ -7,10 +7,6 @@ __pycache__/
 venv/
 .venv/
 
-# Assets binários grandes (adicionar manualmente via SCP/rclone no Pi)
-assets/intro.mp4
-assets/*.mp4
-
 # OS
 .DS_Store
 Thumbs.db

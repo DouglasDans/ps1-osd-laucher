@@ -96,13 +96,15 @@ def run(screen: pygame.Surface, apps: list[tuple[str, str]]) -> None:
 
 
 def _launch(cmd: str) -> pygame.Surface:
-    # Libera o DRM antes de lançar o app — sem isso pygame e o app competem pelo device
+    # Libera DRM e ALSA antes de lançar o app
+    pygame.mixer.quit()
     pygame.display.quit()
 
     subprocess.run(cmd, shell=True)
 
-    # Reinicializa o display depois que o app fechar
+    # Reinicializa display e mixer depois que o app fechar
     pygame.display.init()
+    pygame.mixer.init()
     flags = pygame.FULLSCREEN if IS_PI else 0
     screen = pygame.display.set_mode((WIDTH, HEIGHT), flags)
     pygame.mouse.set_visible(False)
