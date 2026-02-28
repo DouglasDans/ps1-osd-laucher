@@ -1,9 +1,12 @@
+import os
 import subprocess
 
 import pygame
 
 from src import controller
 from src.controller import Action
+
+IS_PI = os.path.exists("/dev/fb0")
 
 FONT_PATH = "assets/fonts/PressStart2P.ttf"
 BG_PATH = "assets/ps1-bios.jpg"
@@ -83,17 +86,27 @@ def run(screen: pygame.Surface, apps: list[tuple[str, str]]) -> None:
                 selected = (selected + 1) % len(apps)
 
             if action == Action.CONFIRM:
-                _launch(screen, apps[selected][1])
+                screen = _launch(apps[selected][1])
+                bg_raw = pygame.image.load(BG_PATH).convert()
+                bg = pygame.transform.scale(bg_raw, (WIDTH, HEIGHT))
 
         _draw(screen, bg, font, selector_surf, apps, selected)
         pygame.display.flip()
         clock.tick(30)
 
 
-def _launch(screen: pygame.Surface, cmd: str) -> None:
-    screen.fill((0, 0, 0))
-    pygame.display.flip()
+def _launch(cmd: str) -> pygame.Surface:
+    # Libera o DRM antes de lançar o app — sem isso pygame e o app competem pelo device
+    pygame.display.quit()
+
     subprocess.run(cmd, shell=True)
+
+    # Reinicializa o display depois que o app fechar
+    pygame.display.init()
+    flags = pygame.FULLSCREEN if IS_PI else 0
+    screen = pygame.display.set_mode((WIDTH, HEIGHT), flags)
+    pygame.mouse.set_visible(False)
+    return screen
 
 
 def _draw(
