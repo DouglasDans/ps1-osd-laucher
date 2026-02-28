@@ -109,6 +109,7 @@ def _launch(cmd: str) -> pygame.Surface:
     flags = pygame.FULLSCREEN if IS_PI else 0
     screen = pygame.display.set_mode((WIDTH, HEIGHT), flags)
     pygame.mouse.set_visible(False)
+    pygame.event.clear()
     return screen
 
 
