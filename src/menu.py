@@ -100,7 +100,10 @@ def _launch(cmd: str) -> pygame.Surface:
     pygame.mixer.quit()
     pygame.display.quit()
 
-    subprocess.run(cmd, shell=True)
+    # Remove variáveis SDL do ambiente — são específicas do pygame
+    # e interferem em apps externos (ex: SDL_AUDIODRIVER=alsa bloqueia ALSA pro RetroArch)
+    clean_env = {k: v for k, v in os.environ.items() if not k.startswith("SDL_")}
+    subprocess.run(cmd, shell=True, env=clean_env)
 
     # Reinicializa display e mixer depois que o app fechar
     pygame.display.init()
