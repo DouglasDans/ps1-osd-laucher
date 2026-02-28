@@ -1,5 +1,6 @@
 import os
 import subprocess
+import sys
 
 import pygame
 
@@ -103,15 +104,18 @@ def run(screen: pygame.Surface, apps: list[tuple[str, str]]) -> None:
 
 
 def _launch(cmd: str) -> pygame.Surface:
-    # Libera o DRM antes de lançar o app
+    quit_after = cmd.startswith("!")
+    if quit_after:
+        cmd = cmd[1:]
+
     pygame.display.quit()
 
-    # Remove variáveis SDL do ambiente — são específicas do pygame
-    # e interferem em apps externos
     clean_env = {k: v for k, v in os.environ.items() if not k.startswith("SDL_")}
     subprocess.run(cmd, shell=True, env=clean_env)
 
-    # Reinicializa o display depois que o app fechar
+    if quit_after:
+        sys.exit(0)
+
     pygame.display.init()
     flags = pygame.FULLSCREEN if IS_PI else 0
     screen = pygame.display.set_mode((WIDTH, HEIGHT), flags)
