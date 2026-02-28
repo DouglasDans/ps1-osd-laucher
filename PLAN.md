@@ -11,7 +11,7 @@ Desenvolvido no Ubuntu/WSL2, transferido para o Pi via SSH.
 ## Estrutura de Arquivos
 
 ```
-ps1-launcher/
+ps1-osd-laucher/
 ├── launcher.py               # Entry point principal
 ├── apps.ini                  # Configuração de aplicativos (editável)
 ├── assets/
@@ -25,7 +25,7 @@ ps1-launcher/
 │   ├── controller.py         # Módulo de input do controle
 │   └── config.py             # Módulo de leitura do apps.ini
 ├── systemd/
-│   └── ps1-launcher.service  # Unit file para o Pi
+│   └── ps1-osd-laucher.service  # Unit file para o Pi
 ├── PLAN.md
 └── AGENTS.md
 ```
@@ -83,7 +83,7 @@ Reiniciar = sudo reboot
 - [ ] Tratar SIGTERM para shutdown limpo
 
 ### Fase 6 — Deploy no Pi
-- [ ] Criar `systemd/ps1-launcher.service`
+- [ ] Criar `systemd/ps1-osd-laucher.service`
 - [ ] Configurar autologin no tty1
 - [ ] Testar transição launcher → app → launcher
 - [ ] Ajustar permissões para `sudo shutdown` sem senha (sudoers)

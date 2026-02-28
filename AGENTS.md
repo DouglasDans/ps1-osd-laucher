@@ -150,7 +150,7 @@ Não setar variáveis SDL de Pi no ambiente de dev.
 
 ## Systemd Unit (Pi)
 
-Arquivo: `systemd/ps1-launcher.service`
+Arquivo: `systemd/ps1-osd-laucher.service`
 
 ```ini
 [Unit]
@@ -163,7 +163,7 @@ User=pi
 Environment=SDL_VIDEODRIVER=kmsdrm
 Environment=SDL_FBDEV=/dev/fb0
 Environment=SDL_AUDIODRIVER=alsa
-ExecStart=/usr/bin/python3 /home/pi/ps1-launcher/launcher.py
+ExecStart=/usr/bin/python3 /home/pi/ps1-osd-laucher/launcher.py
 Restart=always
 RestartSec=3
 
