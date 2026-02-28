@@ -17,7 +17,13 @@ WIDTH, HEIGHT = 1920, 1080
 IS_PI = os.path.exists("/dev/fb0")
 
 
+GAMECONTROLLERDB = os.path.join(BASE_DIR, "assets", "gamecontrollerdb.txt")
+
+
 def setup_environment() -> None:
+    if os.path.exists(GAMECONTROLLERDB):
+        os.environ["SDL_GAMECONTROLLERCONFIG_FILE"] = GAMECONTROLLERDB
+
     if IS_PI:
         os.environ["SDL_VIDEODRIVER"] = "kmsdrm"
         os.environ["SDL_FBDEV"] = "/dev/fb0"
