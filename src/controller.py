@@ -46,15 +46,16 @@ def get_action(event: pygame.event.Event) -> Action | None:
         return Action.QUIT
 
     # GameController API — PS, Xbox, 8BitDo e qualquer controle no SDL_GameControllerDB
-    # D-pad e botões são normalizados independente do fabricante
+    # Valores inteiros SDL2 estáveis (constantes nomeadas indisponíveis em algumas versões)
+    # Ref: https://wiki.libsdl.org/SDL2/SDL_GameControllerButton
     if event.type == pygame.CONTROLLERBUTTONDOWN:
-        if event.button == sdl2_ctrl.BUTTON_DPAD_UP:
+        if event.button == 11:   # SDL_CONTROLLER_BUTTON_DPAD_UP
             return Action.UP
-        if event.button == sdl2_ctrl.BUTTON_DPAD_DOWN:
+        if event.button == 12:   # SDL_CONTROLLER_BUTTON_DPAD_DOWN
             return Action.DOWN
-        if event.button == sdl2_ctrl.BUTTON_A:
+        if event.button == 0:    # SDL_CONTROLLER_BUTTON_A
             return Action.CONFIRM
-        if event.button == sdl2_ctrl.BUTTON_B:
+        if event.button == 1:    # SDL_CONTROLLER_BUTTON_B
             return Action.BACK
 
     # Novo controle conectado em runtime
