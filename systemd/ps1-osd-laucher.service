@@ -1,7 +1,6 @@
 [Unit]
 Description=PS1 OSD Laucher
-After=multi-user.target network-online.target
-Wants=network-online.target
+After=basic.target
 
 [Service]
 Type=simple
@@ -9,7 +8,6 @@ User=douglasdans
 WorkingDirectory=/home/douglasdans/ps1-osd-laucher
 Environment=SDL_VIDEODRIVER=kmsdrm
 Environment=SDL_FBDEV=/dev/fb0
-ExecStartPre=-/usr/bin/git -C /home/douglasdans/ps1-osd-laucher pull
 ExecStart=/usr/bin/python3 /home/douglasdans/ps1-osd-laucher/launcher.py
 Restart=always
 RestartSec=3

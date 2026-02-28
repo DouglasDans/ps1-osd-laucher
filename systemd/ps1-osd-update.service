@@ -1,0 +1,13 @@
+[Unit]
+Description=PS1 OSD Laucher - Auto Update
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=douglasdans
+ExecStart=/usr/bin/git -C /home/douglasdans/ps1-osd-laucher pull
+ExecStartPost=/usr/bin/systemctl restart ps1-osd-laucher
+
+[Install]
+WantedBy=multi-user.target
