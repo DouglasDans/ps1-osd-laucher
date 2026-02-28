@@ -1,0 +1,19 @@
+[Unit]
+Description=PS1 Launcher
+After=multi-user.target network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=douglasdans
+WorkingDirectory=/home/douglasdans/ps1-launcher
+Environment=SDL_VIDEODRIVER=kmsdrm
+Environment=SDL_FBDEV=/dev/fb0
+Environment=SDL_AUDIODRIVER=alsa
+ExecStartPre=-/usr/bin/git -C /home/douglasdans/ps1-launcher pull
+ExecStart=/usr/bin/python3 /home/douglasdans/ps1-launcher/launcher.py
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
