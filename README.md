@@ -1,197 +1,189 @@
 # PS1 OSD Launcher
 
-Launcher minimalista com interface fiel à BIOS do PlayStation 1, feito para rodar em **Raspberry Pi 5** sem desktop, sem X11, sem RetroArch como frontend.
+A minimalist game launcher with a PlayStation 1 BIOS-style interface, designed to run on **Raspberry Pi OS Lite** — no desktop, no X11, no RetroArch as a frontend.
 
-Faz parte do projeto **PS1 Pro** — uma modernização de um PlayStation 1 original com Raspberry Pi 5 interno, mantendo a identidade visual e a experiência do console.
+## Overview
 
-> Post do projeto: [douglasdans.dev/blog/2026/01/ps1-pro-01](https://douglasdans.dev/blog/2026/01/ps1-pro-01/)
+PS1 OSD Launcher boots directly into a controller-navigable menu styled after the original PS1 BIOS screen. It plays a Sony-style intro video, then presents a configurable list of apps (emulators, scripts, system commands) that launch on selection and return to the menu when closed.
 
----
+Built with Python and pygame, it runs over KMSDRM (direct framebuffer) on the Pi and opens as a regular window on Linux desktops or WSL for development.
 
-## O que resolve
+## Features
 
-O PS1 Pro roda **Raspberry Pi OS Lite** sem interface gráfica. O RetroArch era iniciado diretamente via systemd, não havia forma de instalar e acessar outros apps (Duckstation, PPSSPP, scripts de manutenção) sem teclado ou software adicional.
+- Sony PS1 intro video playback before the menu (`assets/intro.mp4`)
+- OSD menu visually faithful to the original PS1 BIOS
+- 100% controller-driven navigation — no keyboard or mouse required
+- Universal controller support via **SDL2 GameController API** + [SDL_GameControllerDB](https://github.com/mdqinc/SDL_GameControllerDB) (2200+ mappings)
+- Apps configured via `apps.ini` — add any emulator, script, or shell command
+- Auto-update via `git pull` on boot
+- Launched automatically via **systemd** at startup
 
-Este launcher resolve isso: é o **ponto central de acesso ao sistema**, controlável apenas com o controle, e permite abrir qualquer app configurado num arquivo `.ini`.
-
----
-
-## Funcionalidades
-
-- Intro da Sony (vídeo `assets/intro.mp4`) antes do menu
-- Menu OSD visual fiel à BIOS original do PS1
-  - Background roxo, fonte pixel, seletor arco-íris, label "MAIN MENU"
-- Navegação 100% por controle — sem teclado, sem mouse
-- Suporte universal a controles via **SDL2 GameController API** + [SDL_GameControllerDB](https://github.com/mdqinc/SDL_GameControllerDB)
-  - PS (DualShock/DualSense), Xbox One/Series, 8BitDo, e qualquer controle no banco de 2200+ mapeamentos
-- Apps configuráveis via `apps.ini` — adicione RetroArch, emuladores standalone, scripts ou qualquer comando
-- Auto-update via `git pull` no boot — push do seu PC, Pi atualiza sozinho
-- Iniciado automaticamente via **systemd** no boot
-
----
-
-## Como funciona
+## How It Works
 
 ```
 Boot
  └── systemd: git pull (auto-update)
       └── python3 launcher.py
-            ├── mpv: toca intro.mp4 (se existir)
-            └── pygame: menu OSD
-                  ├── lê apps.ini
-                  ├── navega com controle
-                  └── seleciona app
-                        ├── libera o display (DRM)
-                        ├── subprocess: executa o app
-                        └── volta ao menu quando o app fechar
+            ├── mpv: plays intro.mp4 (if present)
+            └── pygame: OSD menu
+                  ├── reads apps.ini
+                  ├── controller navigation
+                  └── launches selected app
+                        ├── releases display (DRM)
+                        ├── subprocess: runs app
+                        └── returns to menu when app exits
 ```
 
----
-
-## Requisitos
+## Requirements
 
 ### Hardware
-- Raspberry Pi 5 (testado com 4GB)
-- Controle USB ou Bluetooth (PS, Xbox, 8BitDo, genérico)
+- Raspberry Pi 5 (tested with 4GB RAM)
+- USB or Bluetooth controller (PS, Xbox, 8BitDo, or any generic)
 
-### Sistema
+### OS
 - Raspberry Pi OS Lite (Bookworm)
-- Sem desktop, sem X11
+- No desktop environment, no X11
 
-### Dependências
+### Dependencies
 ```
 python3-pygame
+python3-pil
+python3-numpy
 mpv
 ```
 
----
-
-## Estrutura
+## Project Structure
 
 ```
-ps1-osd-laucher/
+ps1-osd-launcher/
 ├── launcher.py               # Entry point
-├── apps.ini                  # Configuração de apps (editável)
+├── apps.ini                  # App configuration (user-editable)
+├── requirements.txt          # Python dependencies
+├── install.sh                # Pi installation script
 ├── assets/
-│   ├── ps1-bios.jpg          # Background do menu
-│   ├── intro.mp4             # Intro Sony — adicionar manualmente
-│   ├── gamecontrollerdb.txt  # Mapeamentos SDL2 (2200+ controles)
+│   ├── ps1-bios.jpg          # Menu background
+│   ├── intro.mp4             # Sony intro video — add manually (see below)
+│   ├── gamecontrollerdb.txt  # SDL2 controller mappings
 │   └── fonts/
-│       └── PressStart2P.ttf  # Fonte do menu
+│       └── PressStart2P.ttf  # Menu font
 ├── src/
-│   ├── config.py             # Leitura do apps.ini
-│   ├── intro.py              # Reprodução da intro
-│   ├── controller.py         # Input normalizado (SDL2 GameController API)
-│   └── menu.py               # Menu OSD pygame
-├── systemd/
-│   └── ps1-osd-laucher.service
-└── install.sh                # Script de instalação no Pi
+│   ├── config.py             # apps.ini reader
+│   ├── intro.py              # Intro video playback
+│   ├── controller.py         # Normalized controller input (SDL2)
+│   └── menu.py               # OSD menu renderer
+└── systemd/
+    └── ps1-osd-launcher.service
 ```
 
----
-
-## Configurar apps (`apps.ini`)
+## Configuring Apps (`apps.ini`)
 
 ```ini
 [apps]
-RetroArch    = retroarch
-Duckstation  = duckstation-qt
-PPSSPP       = ppsspp
-Desligar     = sudo shutdown -h now
-Reiniciar    = sudo reboot
+RetroArch   = retroarch
+Duckstation = duckstation-qt
+PPSSPP      = ppsspp
+Shutdown    = !sudo shutdown -h now
+Reboot      = !sudo reboot
 ```
 
-- **Chave** = nome exibido no menu
-- **Valor** = comando shell executado
-- A ordem no arquivo define a ordem no menu
-- Edite via SSH e reinicie o service para aplicar
+- **Key** = label shown in the menu
+- **Value** = shell command to execute
+- Prefix `!` for system commands (shutdown, reboot)
+- Order in the file determines menu order
+- Edit via SSH and restart the service to apply
 
----
+## Installation on Raspberry Pi
 
-## Instalação no Pi
+### 1. Clone the repository
 
-### 1. Clonar o repositório
 ```bash
-git clone https://github.com/seu-usuario/ps1-osd-laucher.git /home/douglasdans/ps1-osd-laucher
-cd /home/douglasdans/ps1-osd-laucher
+git clone https://github.com/<your-username>/ps1-osd-launcher.git ~/ps1-osd-launcher
+cd ~/ps1-osd-launcher
 ```
 
-### 2. Adicionar a intro (opcional)
+### 2. Edit the install script
+
+Open `install.sh` and update `INSTALL_DIR` to match your clone path:
+
 ```bash
-# Na sua máquina:
-scp intro.mp4 douglasdans@<ip-do-pi>:/home/douglasdans/ps1-osd-laucher/assets/
+INSTALL_DIR="/home/<your-username>/ps1-osd-launcher"
 ```
 
-### 3. Rodar o instalador
+Also update the sudoers line with your Pi username.
+
+### 3. Add the intro video (optional)
+
+```bash
+# From your local machine:
+scp intro.mp4 <user>@<pi-ip>:~/ps1-osd-launcher/assets/
+```
+
+If `intro.mp4` is absent, the launcher skips it silently.
+
+### 4. Run the installer
+
 ```bash
 bash install.sh
 ```
 
-O `install.sh` faz:
-- Instala `python3-pygame` e `mpv`
-- Copia o service para `/etc/systemd/system/`
-- Dá permissão de `shutdown`/`reboot` sem senha
-- Habilita e inicia o service
+The installer:
+- Installs `python3-pygame`, `python3-pil`, `python3-numpy`, and `mpv`
+- Copies the systemd service to `/etc/systemd/system/`
+- Grants passwordless `shutdown`/`reboot` permission
+- Enables and starts the service
 
-### 4. Desabilitar o service anterior (se houver)
+### 5. Disable any previous launcher (if applicable)
+
 ```bash
 sudo systemctl disable retroarch.service
 sudo systemctl stop retroarch.service
 ```
 
----
+## Updating
 
-## Atualizar o projeto
+Push from your machine — the Pi pulls automatically on the next boot. To apply immediately:
 
-Do seu PC/WSL:
 ```bash
-git push
+# On the Pi:
+cd ~/ps1-osd-launcher && git pull
+sudo systemctl restart ps1-osd-launcher
 ```
 
-No próximo boot, o Pi faz `git pull` automaticamente antes de iniciar o launcher. Para forçar imediatamente:
-```bash
-# No Pi:
-cd /home/douglasdans/ps1-osd-laucher && git pull
-sudo systemctl restart ps1-osd-laucher
-```
-
----
-
-## Desenvolvimento local (WSL / Linux)
+## Development (Linux / WSL)
 
 ```bash
-# Instalar dependências
-sudo apt install python3-pygame mpv
+# Install dependencies
+sudo apt install python3-pygame python3-pil python3-numpy mpv
 
-# Rodar
+# Run
 python3 launcher.py
 ```
 
-No WSL com WSLg, abre uma janela pygame normal. No Pi, usa KMSDRM direto no framebuffer. O controle detectado por plataforma automaticamente — teclado funciona como fallback (setas + Enter + Escape).
+On WSL with WSLg, a normal pygame window opens. On the Pi, it uses KMSDRM directly. Controller detection is automatic — keyboard works as fallback (arrow keys + Enter + Escape).
 
----
+## Controller Mapping
 
-## Mapeamento de controle
+| Action        | PS           | Xbox       | Keyboard |
+|---------------|--------------|------------|----------|
+| Navigate      | D-pad ↑↓     | D-pad ↑↓   | ↑↓       |
+| Confirm       | X (Cross)    | A          | Enter    |
+| Back / Quit   | O (Circle)   | B          | Escape   |
 
-| Ação | PS | Xbox | Teclado |
-|---|---|---|---|
-| Navegar | D-pad ↑↓ | D-pad ↑↓ | ↑↓ |
-| Confirmar | X (Cruz) | A | Enter |
-| Voltar / Sair | O (Círculo) | B | Escape |
+Works with any controller in [SDL_GameControllerDB](https://github.com/mdqinc/SDL_GameControllerDB).
 
-Funciona com qualquer controle no [SDL_GameControllerDB](https://github.com/mdqinc/SDL_GameControllerDB).
-
----
-
-## Logs e debug
+## Logs and Debugging
 
 ```bash
-# Ver logs em tempo real
-sudo journalctl -u ps1-osd-laucher -f
+# Live logs
+sudo journalctl -u ps1-osd-launcher -f
 
-# Ver últimas 50 linhas
-sudo journalctl -u ps1-osd-laucher -n 50 --no-pager
+# Last 50 lines
+sudo journalctl -u ps1-osd-launcher -n 50 --no-pager
 
-# Reiniciar manualmente
-sudo systemctl restart ps1-osd-laucher
+# Restart manually
+sudo systemctl restart ps1-osd-launcher
 ```
+
+## License
+
+MIT License — see [LICENSE](LICENSE) for details.

@@ -1,105 +1,98 @@
-# PS1 Launcher — Escopo para Agentes de IA
+# AGENTS.md — AI Instructions for PS1 OSD Launcher
 
-Este arquivo descreve o projeto para assistentes de IA (Claude Code, etc.) que trabalham neste repositório.
-
----
-
-## O que é este projeto
-
-Um launcher minimalista com identidade visual da BIOS do PlayStation 1, feito para rodar em **Raspberry Pi 5** com **RPi OS Lite** (sem desktop, sem X11).
-
-O launcher:
-1. Exibe a intro Sony do PS1 (vídeo `assets/intro.mp4`)
-2. Mostra um menu OSD estilo BIOS PS1, navegável por controle
-3. Permite configurar apps via `apps.ini`
-4. Executa o app selecionado e retorna ao menu quando ele fecha
-5. É iniciado automaticamente via **systemd** no boot
+This file guides AI assistants (Claude Code, Copilot, etc.) working in this repository.
 
 ---
 
-## Stack Técnica
+## What This Project Is
 
-| Componente | Tecnologia |
-|---|---|
-| Linguagem | Python 3.11+ |
-| Rendering | pygame 2.5+ com SDL2 |
-| Display no Pi | `SDL_VIDEODRIVER=kmsdrm` (sem X11) |
-| Playback de vídeo | mpv via subprocess |
-| Input de controle | `pygame.joystick` |
-| Configuração de apps | `configparser` (INI nativo Python) |
-| Inicialização no Pi | systemd service unit |
-| Fonte | Press Start 2P (TTF em `assets/fonts/`) |
+A minimalist launcher with a PlayStation 1 BIOS-style OSD, built in Python + pygame. It runs on **Raspberry Pi OS Lite** with no desktop environment, using KMSDRM for direct framebuffer rendering. On Linux desktops or WSL, it opens as a regular pygame window for development.
+
+The launcher:
+1. Plays a Sony-style intro video (`assets/intro.mp4`) via mpv
+2. Shows a controller-navigable menu styled after the PS1 BIOS
+3. Reads app entries from `apps.ini`
+4. Launches the selected app as a subprocess, then returns to the menu
+5. Starts automatically via systemd on boot
 
 ---
 
-## Resolução e Visual
+## Tech Stack
 
-- **Resolução alvo:** 1920x1080 (1080p)
-- **Background:** `assets/ps1-bios.jpg` — imagem estática da tela da BIOS PS1
-- **Fonte:** Press Start 2P — usada para todos os textos do menu
-- **Seletor:** retângulo/highlight roxo sobre o item ativo
-- **Sem animações** — interface estática, sem transições, sem partículas
-
----
-
-## Estrutura de Módulos
-
-### `launcher.py`
-Entry point. Responsável por:
-- Detectar plataforma (`platform.system()`)
-- Setar variáveis de ambiente SDL antes do `pygame.init()`
-- Chamar intro → menu em sequência
-- Tratar encerramento limpo (SIGTERM)
-
-### `src/config.py`
-Lê `apps.ini` e retorna lista de apps.
-- Input: caminho para o `.ini`
-- Output: lista de tuplas `(nome_exibido, comando_shell)`
-- Não tem dependências externas além de `configparser`
-
-### `src/intro.py`
-Reproduz o vídeo da intro via mpv.
-- Verifica existência de `assets/intro.mp4` antes de tentar
-- No Pi: `mpv --vo=drm --fullscreen assets/intro.mp4`
-- Em dev (WSL/Linux desktop): `mpv --fullscreen assets/intro.mp4`
-- Usa `subprocess.run()` — bloqueia até o vídeo terminar
-
-### `src/controller.py`
-Abstrai input de controle e teclado.
-- Inicializa `pygame.joystick` para o primeiro controle conectado
-- Mapeia: D-pad cima/baixo → navegar, X/A → confirmar, O/B → voltar
-- Fallback teclado: setas cima/baixo → navegar, Enter → confirmar, Escape → voltar
-- Retorna eventos normalizados (não expõe pygame diretamente)
-
-### `src/menu.py`
-Renderiza e gerencia o menu OSD.
-- Carrega `ps1-bios.jpg` como background
-- Recebe lista de apps de `config.py`
-- Loop principal: renderiza → processa input → executa app selecionado
-- Execução de app: `subprocess.run(comando, shell=True)` — bloqueia até fechar
-- Após retorno do app: volta ao loop do menu
+| Component        | Technology                              |
+|------------------|-----------------------------------------|
+| Language         | Python 3.11+                            |
+| Rendering        | pygame 2.5+ (SDL2)                      |
+| Display (Pi)     | `SDL_VIDEODRIVER=kmsdrm` (no X11)       |
+| Video playback   | mpv via subprocess                      |
+| Controller input | `pygame.joystick` + SDL_GameControllerDB |
+| App config       | `configparser` (INI format)             |
+| Boot integration | systemd service unit                    |
+| Font             | Press Start 2P (`assets/fonts/`)        |
 
 ---
 
-## Arquivo de Configuração (`apps.ini`)
+## Project Structure
 
-```ini
-[apps]
-RetroArch = retroarch
-Duckstation = duckstation-qt
-PPSSPP = ppsspp
-Desligar = sudo shutdown -h now
-Reiniciar = sudo reboot
+```
+ps1-osd-launcher/
+├── launcher.py        # Entry point — platform detection, init, boot sequence
+├── apps.ini           # User-configured app list
+├── requirements.txt   # Python deps (pygame, Pillow)
+├── install.sh         # Pi installation script
+├── assets/
+│   ├── ps1-bios.jpg          # Static menu background
+│   ├── intro.mp4             # Intro video (not tracked in git)
+│   ├── gamecontrollerdb.txt  # SDL2 mappings
+│   └── fonts/
+│       └── PressStart2P.ttf
+├── src/
+│   ├── config.py      # Reads apps.ini → list of (label, command)
+│   ├── intro.py       # Plays intro.mp4 via mpv subprocess
+│   ├── controller.py  # Normalizes joystick + keyboard events
+│   └── menu.py        # OSD menu loop, rendering, app launch
+└── systemd/
+    └── ps1-osd-launcher.service
 ```
 
-- Seção obrigatória: `[apps]`
-- Chave = nome exibido no menu
-- Valor = comando shell a executar
-- Ordem no arquivo = ordem no menu
+---
+
+## Module Responsibilities
+
+### `launcher.py`
+- Detects platform via `os.path.exists("/dev/fb0")` (Pi vs dev)
+- Sets SDL environment variables before `pygame.init()`
+- Calls intro → menu in sequence
+- Handles SIGTERM for clean shutdown
+
+### `src/config.py`
+- Reads `apps.ini` with `configparser`
+- Returns a list of `(label: str, command: str)` tuples
+- No external dependencies beyond stdlib
+
+### `src/intro.py`
+- Checks for `assets/intro.mp4` before attempting playback
+- Pi: `mpv --vo=drm --fullscreen assets/intro.mp4`
+- Dev: `mpv --fullscreen assets/intro.mp4`
+- Uses `subprocess.run()` — blocks until video ends
+- Silently skips if file is absent
+
+### `src/controller.py`
+- Initializes the first joystick found via `pygame.joystick`
+- Maps: D-pad ↑↓ → navigate, X/A → confirm, O/B → back
+- Keyboard fallback: arrows → navigate, Enter → confirm, Escape → back
+- Returns normalized events — callers do not interact with pygame events directly
+
+### `src/menu.py`
+- Loads `ps1-bios.jpg` as background at 1920×1080
+- Renders app labels from `config.py` with Press Start 2P font
+- Draws a highlight rectangle over the active item
+- On confirm: calls `subprocess.run(command, shell=True)`, waits, resumes menu
+- No animations — static interface, faithful to the PS1 BIOS style
 
 ---
 
-## Detecção de Plataforma
+## Platform Detection
 
 ```python
 import platform, os
@@ -112,72 +105,69 @@ if IS_PI:
     os.environ["SDL_AUDIODRIVER"] = "alsa"
 ```
 
-A detecção de `/dev/fb0` diferencia Pi de WSL/desktop Linux.
+Do not set KMS variables in the development environment.
 
 ---
 
-## Convenções de Código
-
-- Python puro, sem frameworks além de pygame
-- Sem type hints obrigatórios, mas bem-vindos em funções públicas
-- Cada módulo em `src/` é independente e testável isoladamente
-- Sem logging verboso — `print()` apenas para erros críticos
-- Comentários só onde a lógica não é óbvia
-- Sem abstrações prematuras — manter simples
-
----
-
-## Assets Necessários
-
-| Arquivo | Status | Descrição |
-|---|---|---|
-| `assets/ps1-bios.jpg` | ✅ presente | Background do menu OSD |
-| `assets/intro.mp4` | ⏳ a adicionar | Intro Sony em 1080p |
-| `assets/fonts/PressStart2P.ttf` | ⏳ a adicionar | Fonte do menu |
-
----
-
-## Ambiente de Desenvolvimento
-
-- **Dev:** Ubuntu via WSL2 com WSLg (suporte a GUI nativa)
-- **Deploy:** Raspberry Pi 5, RPi OS Lite, sem desktop
-- **Transferência:** SSH/SCP ou git
-
-No WSL, pygame abre janela normal. No Pi, usa KMSDRM (framebuffer direto).
-Não setar variáveis SDL de Pi no ambiente de dev.
-
----
-
-## Systemd Unit (Pi)
-
-Arquivo: `systemd/ps1-osd-laucher.service`
+## `apps.ini` Format
 
 ```ini
-[Unit]
-Description=PS1 Launcher
-After=multi-user.target
-
-[Service]
-Type=simple
-User=pi
-Environment=SDL_VIDEODRIVER=kmsdrm
-Environment=SDL_FBDEV=/dev/fb0
-Environment=SDL_AUDIODRIVER=alsa
-ExecStart=/usr/bin/python3 /home/pi/ps1-osd-laucher/launcher.py
-Restart=always
-RestartSec=3
-
-[Install]
-WantedBy=multi-user.target
+[apps]
+RetroArch  = retroarch
+PPSSPP     = ppsspp
+Shutdown   = !sudo shutdown -h now
+Reboot     = !sudo reboot
 ```
+
+- Section `[apps]` is required
+- Key = menu label, Value = shell command
+- Prefix `!` signals a system command (shutdown/reboot)
+- File order = menu order
 
 ---
 
-## O que NÃO está no escopo
+## Coding Conventions
 
-- Sem suporte a mouse ou touch
-- Sem scraper de capas ou metadados de jogos
-- Sem animações no menu (BIOS PS1 é estática)
-- Sem UI de configuração — editar `apps.ini` manualmente via SSH
-- Sem suporte multi-idioma
-- Sem autenticação ou multi-usuário
+- Pure Python — no frameworks beyond pygame and stdlib
+- Each module in `src/` is independent and individually testable
+- No verbose logging — `print()` only for critical errors
+- Comments only where logic is non-obvious
+- No premature abstractions — keep it simple
+
+---
+
+## Commit Conventions
+
+Use conventional commits with imperative present tense:
+
+```
+feat: add splash screen before intro
+fix: handle missing gamecontrollerdb.txt gracefully
+refactor: extract app execution into a helper
+chore: update SDL_GameControllerDB mappings
+docs: update AGENTS.md with platform detection notes
+```
+
+- Keep commits focused — one logical change per commit
+- Do not include `Co-Authored-By` lines
+
+---
+
+## Development Environment
+
+- **Dev machine:** Linux or WSL2 with WSLg (native GUI support)
+- **Target:** Raspberry Pi 5, Raspberry Pi OS Lite (Bookworm), no desktop
+- **Transfer:** SSH/SCP or git push + pull on boot
+
+On WSL, pygame opens a normal window. On the Pi, it renders via KMSDRM. Do not set Pi SDL env vars during local development.
+
+---
+
+## Out of Scope
+
+- No mouse or touch support
+- No ROM scraping or game metadata
+- No animations in the menu
+- No in-app configuration UI — edit `apps.ini` via SSH
+- No multi-language support
+- No multi-user or authentication
