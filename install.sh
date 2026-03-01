@@ -6,7 +6,7 @@ set -e
 INSTALL_DIR="/home/douglasdans/ps1-osd-laucher"
 
 echo ">>> Instalando dependências..."
-sudo apt install -y python3-pygame mpv
+sudo apt install -y python3-pygame python3-pil python3-numpy mpv
 
 echo ">>> Copiando services..."
 sudo cp "$INSTALL_DIR/systemd/ps1-osd-laucher.service" /etc/systemd/system/
