@@ -2,6 +2,8 @@
 
 A minimalist game launcher with a PlayStation 1 BIOS-style interface, designed to run on **Raspberry Pi OS Lite** — no desktop, no X11, no RetroArch as a frontend.
 
+![PS1 OSD Launcher](assets/readme.png)
+
 ## Overview
 
 PS1 OSD Launcher boots directly into a controller-navigable menu styled after the original PS1 BIOS screen. It plays a Sony-style intro video, then presents a configurable list of apps (emulators, scripts, system commands) that launch on selection and return to the menu when closed.
