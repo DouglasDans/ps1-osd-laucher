@@ -63,33 +63,41 @@ def run(screen: pygame.Surface, apps: list[tuple[str, str]]) -> None:
 
     selected = 0
     clock = pygame.time.Clock()
-    last_launch_time = 0
-    LAUNCH_COOLDOWN = 500
+    transitioning = False
+    transition_start = 0
+    TRANSITION_DURATION = 800
 
     while True:
         now = pygame.time.get_ticks()
-        for event in pygame.event.get():
-            if now - last_launch_time < LAUNCH_COOLDOWN:
-                continue
 
-            action = controller.get_action(event)
-
-            if action in (Action.QUIT, Action.BACK):
-                return
-
-            if action == Action.UP:
-                selected = (selected - 1) % len(apps)
-
-            if action == Action.DOWN:
-                selected = (selected + 1) % len(apps)
-
-            if action == Action.CONFIRM:
+        if transitioning:
+            t = min((now - transition_start) / TRANSITION_DURATION, 1.0)
+            if t >= 1.0:
                 screen = _launch(apps[selected][1])
-                last_launch_time = pygame.time.get_ticks()
+                transitioning = False
                 bg_raw = pygame.image.load(BG_PATH).convert()
                 bg = pygame.transform.scale(bg_raw, (WIDTH, HEIGHT))
+                t = 0.0
+            selected_color = (int(255 * (1 - t)), int(255 * (1 - t)), int(255 * (1 - t)))
+        else:
+            selected_color = COLOR_TEXT
+            for event in pygame.event.get():
+                action = controller.get_action(event)
 
-        _draw(screen, bg, font, font_selected, main_menu_img, apps, splashes, selected)
+                if action in (Action.QUIT, Action.BACK):
+                    return
+
+                if action == Action.UP:
+                    selected = (selected - 1) % len(apps)
+
+                if action == Action.DOWN:
+                    selected = (selected + 1) % len(apps)
+
+                if action == Action.CONFIRM:
+                    transitioning = True
+                    transition_start = now
+
+        _draw(screen, bg, font, font_selected, main_menu_img, apps, splashes, selected, selected_color)
         pygame.display.flip()
         clock.tick(30)
 
@@ -124,6 +132,7 @@ def _draw(
     apps: list[tuple[str, str]],
     splashes: list[pygame.Surface],
     selected: int,
+    selected_color: tuple[int, int, int] = COLOR_TEXT,
 ) -> None:
     screen.blit(bg, (0, 0))
     screen.blit(main_menu_img, (WIDTH - main_menu_img.get_width() - 60, 60))
@@ -146,5 +155,6 @@ def _draw(
         text_x = splash_cx - text_w // 2
         text_y = splash_y + (splash_h - text_h) // 2
 
+        color = selected_color if is_selected else COLOR_TEXT
         screen.blit(f.render(text, True, COLOR_SHADOW), (text_x + SHADOW_OFFSET[0], text_y + SHADOW_OFFSET[1]))
-        screen.blit(f.render(text, True, COLOR_TEXT), (text_x, text_y))
+        screen.blit(f.render(text, True, color), (text_x, text_y))
