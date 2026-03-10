@@ -14,7 +14,7 @@ IS_PI = os.path.exists("/dev/fb0")
 
 PS1_FONT_SHEET = "assets/ps1_font_sheet.png"
 PS1_FONT_JSON = "assets/ps1_font.json"
-BG_PATH = "assets/ps1-bios.jpg"
+BG_PATH = "assets/ps1-bios.png"
 MAIN_MENU_IMG_PATH = "assets/main-menu.png"
 SPLASH_DIR = "assets/items-splash"
 
@@ -25,7 +25,7 @@ WIDTH, HEIGHT = 1920, 1080
 FONT_SCALE = 0.70
 FONT_SCALE_SELECTED = 0.87
 ITEM_X = 210
-ITEM_START_Y = 340
+ITEM_START_Y = 320
 ITEM_SPACING = 160
 
 COLOR_TEXT = (255, 255, 255)
@@ -33,7 +33,7 @@ COLOR_SHADOW = (0, 0, 0)
 SHADOW_OFFSET = (5, 5)
 
 SPLASH_BASE_W = 500
-SPLASH_BASE_H = 140
+SPLASH_BASE_H = 130
 
 
 def _load_splashes(apps: list) -> list[pygame.Surface]:

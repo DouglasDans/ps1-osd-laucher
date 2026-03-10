@@ -11,7 +11,7 @@ from src.menu import run as run_menu
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 APPS_INI = os.path.join(BASE_DIR, "apps.ini")
 INTRO_VIDEO = os.path.join(BASE_DIR, "assets", "intro.mp4")
-SPLASH_IMAGE = os.path.join(BASE_DIR, "assets", "ps1-bios.jpg")
+SPLASH_IMAGE = os.path.join(BASE_DIR, "assets", "ps1-bios.png")
 
 WIDTH, HEIGHT = 1920, 1080
 
