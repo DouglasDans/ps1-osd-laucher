@@ -55,8 +55,8 @@ def run(screen: pygame.Surface, apps: list[tuple[str, str]]) -> None:
 
     _raw_menu_img = pygame.image.load(MAIN_MENU_IMG_PATH).convert()
     orig_w, orig_h = _raw_menu_img.get_size()
-    box_h = 120
-    box_w = int(orig_w * box_h / orig_h * 3 / 4)  # corrige stretch 16:9 → 4:3
+    box_h = 90
+    box_w = int(orig_w * box_h / orig_h)
     main_menu_img = pygame.transform.scale(_raw_menu_img, (box_w, box_h))
 
     splashes = _load_splashes(apps)
@@ -134,7 +134,7 @@ def _draw(
     selected_color: tuple[int, int, int] = COLOR_TEXT,
 ) -> None:
     screen.blit(bg, (0, 0))
-    screen.blit(main_menu_img, (WIDTH - main_menu_img.get_width() - 100, 60))
+    screen.blit(main_menu_img, (WIDTH - main_menu_img.get_width() - 60, 60))
 
     for i, (name, _) in enumerate(apps):
         is_selected = (i == selected)
