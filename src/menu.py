@@ -65,7 +65,7 @@ def run(screen: pygame.Surface, apps: list[tuple[str, str]]) -> None:
     clock = pygame.time.Clock()
     transitioning = False
     transition_start = 0
-    TRANSITION_DURATION = 1000
+    TRANSITION_DURATION = 800
 
     while True:
         now = pygame.time.get_ticks()
