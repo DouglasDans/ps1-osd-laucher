@@ -43,7 +43,7 @@ def _load_splashes(apps: list) -> list[pygame.Surface]:
     for i in range(len(apps)):
         path = paths[i % len(paths)]
         img = pygame.image.load(path).convert_alpha()
-        result.append(pygame.transform.scale(img, (SPLASH_BASE_W, SPLASH_BASE_H)))
+        result.append(pygame.transform.smoothscale(img, (SPLASH_BASE_W, SPLASH_BASE_H)))
     return result
 
 
