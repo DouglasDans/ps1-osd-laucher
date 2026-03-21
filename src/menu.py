@@ -35,6 +35,7 @@ SHADOW_OFFSET = (5, 5)
 SPLASH_BASE_W = 500
 SPLASH_BASE_H = 130
 VISIBLE_COUNT = 4
+SLIDE_DURATION = 120
 
 
 def _load_splashes(apps: list) -> list[pygame.Surface]:
@@ -64,6 +65,8 @@ def run(screen: pygame.Surface, apps: list[tuple[str, str]]) -> None:
 
     selected = 0
     scroll_offset = 0
+    slide_start = 0
+    slide_dir = 0
     clock = pygame.time.Clock()
     transitioning = False
     transition_start = 0
@@ -92,22 +95,30 @@ def run(screen: pygame.Surface, apps: list[tuple[str, str]]) -> None:
                 if action == Action.UP:
                     selected = (selected - 1) % len(apps)
                     if selected == len(apps) - 1:
-                        scroll_offset = max(0, len(apps) - VISIBLE_COUNT)
+                        new_offset = max(0, len(apps) - VISIBLE_COUNT)
                     else:
-                        scroll_offset = min(scroll_offset, selected)
+                        new_offset = min(scroll_offset, selected)
+                    if new_offset != scroll_offset:
+                        slide_dir = -1
+                        slide_start = now
+                    scroll_offset = new_offset
 
                 if action == Action.DOWN:
                     selected = (selected + 1) % len(apps)
                     if selected == 0:
-                        scroll_offset = 0
+                        new_offset = 0
                     else:
-                        scroll_offset = max(scroll_offset, selected - VISIBLE_COUNT + 1)
+                        new_offset = max(scroll_offset, selected - VISIBLE_COUNT + 1)
+                    if new_offset != scroll_offset:
+                        slide_dir = 1
+                        slide_start = now
+                    scroll_offset = new_offset
 
                 if action == Action.CONFIRM:
                     transitioning = True
                     transition_start = now
 
-        _draw(screen, bg, font, main_menu_img, apps, splashes, selected, scroll_offset, selected_color)
+        _draw(screen, bg, font, main_menu_img, apps, splashes, selected, scroll_offset, now, slide_start, slide_dir, selected_color)
         pygame.display.flip()
         clock.tick(30)
 
@@ -142,10 +153,20 @@ def _draw(
     splashes: list[pygame.Surface],
     selected: int,
     scroll_offset: int,
+    now: int,
+    slide_start: int,
+    slide_dir: int,
     selected_color: tuple[int, int, int] = COLOR_TEXT,
 ) -> None:
     screen.blit(bg, (0, 0))
     screen.blit(main_menu_img, (WIDTH - main_menu_img.get_width() - 60, 60))
+
+    elapsed = now - slide_start
+    if slide_start > 0 and elapsed < SLIDE_DURATION:
+        t = elapsed / SLIDE_DURATION
+        y_offset = int((1 - t) * ITEM_SPACING * slide_dir)
+    else:
+        y_offset = 0
 
     visible = apps[scroll_offset : scroll_offset + VISIBLE_COUNT]
     for i, (name, _) in enumerate(visible):
@@ -155,7 +176,7 @@ def _draw(
         splash_w = splash_surf.get_width()
         splash_h = splash_surf.get_height()
 
-        y_center = ITEM_START_Y + i * ITEM_SPACING
+        y_center = ITEM_START_Y + i * ITEM_SPACING + y_offset
         splash_y = y_center - splash_h // 2
 
         screen.blit(splash_surf, (ITEM_X, splash_y))
