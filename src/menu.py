@@ -34,6 +34,7 @@ SHADOW_OFFSET = (5, 5)
 
 SPLASH_BASE_W = 500
 SPLASH_BASE_H = 130
+VISIBLE_COUNT = 4
 
 
 def _load_splashes(apps: list) -> list[pygame.Surface]:
@@ -62,6 +63,7 @@ def run(screen: pygame.Surface, apps: list[tuple[str, str]]) -> None:
     splashes = _load_splashes(apps)
 
     selected = 0
+    scroll_offset = 0
     clock = pygame.time.Clock()
     transitioning = False
     transition_start = 0
@@ -89,15 +91,23 @@ def run(screen: pygame.Surface, apps: list[tuple[str, str]]) -> None:
 
                 if action == Action.UP:
                     selected = (selected - 1) % len(apps)
+                    if selected == len(apps) - 1:
+                        scroll_offset = max(0, len(apps) - VISIBLE_COUNT)
+                    else:
+                        scroll_offset = min(scroll_offset, selected)
 
                 if action == Action.DOWN:
                     selected = (selected + 1) % len(apps)
+                    if selected == 0:
+                        scroll_offset = 0
+                    else:
+                        scroll_offset = max(scroll_offset, selected - VISIBLE_COUNT + 1)
 
                 if action == Action.CONFIRM:
                     transitioning = True
                     transition_start = now
 
-        _draw(screen, bg, font, main_menu_img, apps, splashes, selected, selected_color)
+        _draw(screen, bg, font, main_menu_img, apps, splashes, selected, scroll_offset, selected_color)
         pygame.display.flip()
         clock.tick(30)
 
@@ -131,14 +141,17 @@ def _draw(
     apps: list[tuple[str, str]],
     splashes: list[pygame.Surface],
     selected: int,
+    scroll_offset: int,
     selected_color: tuple[int, int, int] = COLOR_TEXT,
 ) -> None:
     screen.blit(bg, (0, 0))
     screen.blit(main_menu_img, (WIDTH - main_menu_img.get_width() - 60, 60))
 
-    for i, (name, _) in enumerate(apps):
-        is_selected = (i == selected)
-        splash_surf = splashes[i]
+    visible = apps[scroll_offset : scroll_offset + VISIBLE_COUNT]
+    for i, (name, _) in enumerate(visible):
+        real_index = scroll_offset + i
+        is_selected = (real_index == selected)
+        splash_surf = splashes[real_index]
         splash_w = splash_surf.get_width()
         splash_h = splash_surf.get_height()
 
