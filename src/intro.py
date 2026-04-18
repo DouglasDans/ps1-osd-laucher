@@ -62,10 +62,24 @@ def _show_splash(image_path: str) -> None:
             pass
 
 
+_KDSETMODE = 0x4B3A
+_KD_GRAPHICS = 0x01
+_KD_TEXT = 0x00
+
+
 def _hide_tty() -> None:
-    """Esconde cursor e limpa o TTY1 para não aparecer entre intro e menu."""
     try:
         with open("/dev/tty1", "w") as tty:
-            tty.write("\033[?25l\033[2J\033[H")  # oculta cursor, limpa tela
+            tty.write("\033[?25l\033[2J\033[H")
+        with open("/dev/tty1", "wb") as tty:
+            fcntl.ioctl(tty, _KDSETMODE, _KD_GRAPHICS)
+    except OSError:
+        pass
+
+
+def restore_tty() -> None:
+    try:
+        with open("/dev/tty1", "wb") as tty:
+            fcntl.ioctl(tty, _KDSETMODE, _KD_TEXT)
     except OSError:
         pass

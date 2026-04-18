@@ -5,13 +5,13 @@ import pygame
 
 from src import controller
 from src.config import load_apps
-from src.intro import play_intro
+from src.intro import play_intro, restore_tty
 from src.menu import run as run_menu
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 APPS_INI = os.path.join(BASE_DIR, "apps.ini")
 INTRO_VIDEO = os.path.join(BASE_DIR, "assets", "intro.mp4")
-SPLASH_IMAGE = os.path.join(BASE_DIR, "assets", "ps1-bios.png")
+SPLASH_IMAGE = os.path.join(BASE_DIR, "assets", "last_frame.png")
 
 WIDTH, HEIGHT = 1920, 1080
 
@@ -56,6 +56,7 @@ def main() -> None:
 
     pygame.display.quit()
     pygame.font.quit()
+    restore_tty()
 
 
 if __name__ == "__main__":
