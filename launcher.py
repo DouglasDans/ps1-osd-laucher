@@ -1,12 +1,15 @@
+import logging
 import os
 import sys
 
 import pygame
 
-from src import controller
+from src import controller, logger
 from src.config import load_apps
 from src.intro import play_intro, restore_tty
 from src.menu import run as run_menu
+
+log = logging.getLogger("ps1.launcher")
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 APPS_INI = os.path.join(BASE_DIR, "apps.ini")
@@ -32,12 +35,15 @@ def setup_environment() -> None:
 
 
 def main() -> None:
+    logger.setup()
+    log.info("Launcher iniciado")
+
     setup_environment()
 
     try:
         apps = load_apps(APPS_INI)
     except (FileNotFoundError, KeyError) as e:
-        print(f"Erro ao carregar apps.ini: {e}", file=sys.stderr)
+        log.error("Erro ao carregar apps.ini: %s", e)
         sys.exit(1)
 
     play_intro(INTRO_VIDEO, SPLASH_IMAGE)
@@ -57,7 +63,12 @@ def main() -> None:
     pygame.display.quit()
     pygame.font.quit()
     restore_tty()
+    log.info("Launcher encerrado")
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception:
+        logging.getLogger("ps1.launcher").exception("Exceção não tratada")
+        sys.exit(1)

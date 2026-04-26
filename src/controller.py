@@ -1,8 +1,11 @@
+import logging
 import os
 
 import pygame
 from pygame._sdl2 import controller as sdl2_ctrl
 from enum import Enum, auto
+
+log = logging.getLogger("ps1.controller")
 
 GAMECONTROLLERDB = os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
@@ -25,9 +28,11 @@ def init() -> None:
 
     sdl2_ctrl.init()
 
-    for i in range(sdl2_ctrl.get_count()):
+    count = sdl2_ctrl.get_count()
+    for i in range(count):
         if sdl2_ctrl.is_controller(i):
             sdl2_ctrl.Controller(i)
+    log.info("Controles detectados na inicialização: %d", count)
 
 
 def get_action(event: pygame.event.Event) -> Action | None:
@@ -62,5 +67,6 @@ def get_action(event: pygame.event.Event) -> Action | None:
     if event.type == pygame.CONTROLLERDEVICEADDED:
         if sdl2_ctrl.is_controller(event.device_index):
             sdl2_ctrl.Controller(event.device_index)
+            log.info("Controle conectado: índice=%d", event.device_index)
 
     return None

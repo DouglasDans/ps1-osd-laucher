@@ -1,7 +1,10 @@
+import logging
 import os
 import struct
 import fcntl
 import subprocess
+
+log = logging.getLogger("ps1.intro")
 
 
 def play_intro(video_path: str, splash_path: str | None = None) -> None:
@@ -11,6 +14,7 @@ def play_intro(video_path: str, splash_path: str | None = None) -> None:
         _hide_tty()
 
     if not os.path.exists(video_path):
+        log.warning("Vídeo de intro não encontrado: %s", video_path)
         return
 
     cmd = ["mpv", "--fullscreen", "--no-config"]
@@ -18,7 +22,9 @@ def play_intro(video_path: str, splash_path: str | None = None) -> None:
         cmd += ["--vo=drm"]
 
     cmd.append(video_path)
-    subprocess.run(cmd)
+    log.info("Reproduzindo intro: %s", video_path)
+    result = subprocess.run(cmd)
+    log.info("Intro encerrada: returncode=%d", result.returncode)
 
     if splash_path and os.path.exists(splash_path):
         _show_splash(splash_path)
@@ -52,6 +58,7 @@ def _show_splash(image_path: str) -> None:
             fb.write(data)
 
     except Exception:
+        log.exception("Erro ao exibir splash no framebuffer")
         try:
             with open("/dev/fb0", "wb") as fb:
                 fb.write(b"\x00" * (1366 * 768 * 2))

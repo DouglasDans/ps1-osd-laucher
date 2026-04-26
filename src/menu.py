@@ -1,10 +1,14 @@
 import glob
+import logging
 import os
 import random
 import subprocess
 import sys
+import time
 
 import pygame
+
+log = logging.getLogger("ps1.menu")
 
 from src import controller
 from src.controller import Action
@@ -115,6 +119,7 @@ def run(screen: pygame.Surface, apps: list[tuple[str, str]]) -> None:
                     scroll_offset = new_offset
 
                 if action == Action.CONFIRM:
+                    log.info("Selecionado: %s", apps[selected][0])
                     transitioning = True
                     transition_start = now
 
@@ -128,10 +133,14 @@ def _launch(cmd: str) -> pygame.Surface:
     if quit_after:
         cmd = cmd[1:]
 
+    log.info("Lançando: %s", cmd)
     pygame.display.quit()
 
     clean_env = {k: v for k, v in os.environ.items() if not k.startswith("SDL_")}
-    subprocess.run(cmd, shell=True, env=clean_env)
+    t0 = time.monotonic()
+    result = subprocess.run(cmd, shell=True, env=clean_env)
+    elapsed = time.monotonic() - t0
+    log.info("App encerrado: returncode=%d, duração=%.1fs", result.returncode, elapsed)
 
     if quit_after:
         sys.exit(0)
