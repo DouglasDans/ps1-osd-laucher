@@ -10,9 +10,6 @@ def play_intro(video_path: str, splash_path: str | None = None) -> None:
     if is_pi:
         _hide_tty()
 
-    if not is_pi:
-        return
-
     if not os.path.exists(video_path):
         return
 
