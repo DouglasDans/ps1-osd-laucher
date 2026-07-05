@@ -6,7 +6,7 @@ import pygame
 
 from src import controller, logger
 from src.config import load_apps
-from src.intro import play_intro, restore_tty
+from src.intro import hide_tty, play_intro, restore_tty
 from src.menu import run as run_menu
 
 log = logging.getLogger("ps1.launcher")
@@ -46,16 +46,19 @@ def main() -> None:
         log.error("Erro ao carregar apps.ini: %s", e)
         sys.exit(1)
 
-    play_intro(INTRO_VIDEO, SPLASH_IMAGE)
+    if IS_PI:
+        hide_tty()
 
     # Inicializa só o necessário — sem mixer para não ocupar o ALSA
-    # (o menu não tem som; mpv cuida do áudio da intro por conta própria)
+    # (o menu não tem som; o ffpyplayer toca o áudio da intro pelo SDL dele)
     pygame.display.init()
     pygame.font.init()
     flags = pygame.FULLSCREEN if IS_PI else 0
     screen = pygame.display.set_mode((WIDTH, HEIGHT), flags)
     pygame.display.set_caption("PS1 Launcher")
     pygame.mouse.set_visible(False)
+
+    play_intro(screen, INTRO_VIDEO, SPLASH_IMAGE)
 
     controller.init()
     run_menu(screen, apps)

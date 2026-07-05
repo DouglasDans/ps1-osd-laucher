@@ -8,7 +8,7 @@ User=douglasdans
 WorkingDirectory=/home/douglasdans/ps1-osd-laucher
 Environment=SDL_VIDEODRIVER=kmsdrm
 Environment=SDL_FBDEV=/dev/fb0
-ExecStart=/usr/bin/python3 /home/douglasdans/ps1-osd-laucher/launcher.py
+ExecStart=/home/douglasdans/ps1-osd-laucher/venv/bin/python3 /home/douglasdans/ps1-osd-laucher/launcher.py
 Restart=on-failure
 RestartSec=3
 

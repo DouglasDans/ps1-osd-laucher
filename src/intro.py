@@ -1,69 +1,75 @@
+import fcntl
 import logging
 import os
-import struct
-import fcntl
-import subprocess
+import time
+
+import pygame
 
 log = logging.getLogger("ps1.intro")
 
 
-def play_intro(video_path: str, splash_path: str | None = None) -> None:
-    is_pi = os.path.exists("/dev/fb0")
-
-    if is_pi:
-        _hide_tty()
-
+def play_intro(screen: pygame.Surface, video_path: str, splash_path: str | None = None) -> None:
     if not os.path.exists(video_path):
         log.warning("Vídeo de intro não encontrado: %s", video_path)
+        _show_splash(screen, splash_path)
         return
 
-    cmd = ["mpv", "--fullscreen", "--no-config"]
-    if is_pi:
-        cmd += ["--vo=drm"]
-
-    cmd.append(video_path)
-    log.info("Reproduzindo intro: %s", video_path)
-    result = subprocess.run(cmd)
-    log.info("Intro encerrada: returncode=%d", result.returncode)
-
-    if splash_path and os.path.exists(splash_path):
-        _show_splash(splash_path)
-
-
-def _show_splash(image_path: str) -> None:
-    """Exibe imagem no framebuffer durante a transição entre intro e pygame."""
     try:
-        import numpy as np
-        from PIL import Image
+        from ffpyplayer.player import MediaPlayer
+    except ImportError:
+        log.warning("ffpyplayer indisponível — pulando intro")
+        _show_splash(screen, splash_path)
+        return
 
-        with open("/dev/fb0", "rb+") as fb:
-            info = fcntl.ioctl(fb, 0x4600, b"\x00" * 160)
-            xres = struct.unpack_from("I", info, 0)[0]
-            yres = struct.unpack_from("I", info, 4)[0]
-            bpp  = struct.unpack_from("I", info, 24)[0]
+    log.info("Reproduzindo intro: %s", video_path)
+    player = MediaPlayer(video_path, ff_opts={"out_fmt": "rgb24"})
+    try:
+        while True:
+            pygame.event.get()
 
-            img = Image.open(image_path).convert("RGB").resize((xres, yres))
-            arr = np.array(img, dtype=np.uint16)
+            frame, val = player.get_frame()
+            if val == "eof":
+                break
+            if frame is None:
+                time.sleep(0.010)
+                continue
 
-            if bpp == 16:
-                pixels = ((arr[:, :, 0] & 0xF8) << 8) | \
-                         ((arr[:, :, 1] & 0xFC) << 3) | \
-                         (arr[:, :, 2] >> 3)
-                data = pixels.astype("<u2").tobytes()
-            else:
-                b, g, r = arr[:, :, 2], arr[:, :, 1], arr[:, :, 0]
-                data = np.stack([b, g, r, np.full_like(r, 255)], axis=-1).tobytes()
-
-            fb.seek(0)
-            fb.write(data)
-
+            img, _ts = frame
+            if val > 0:
+                time.sleep(val)
+            _blit_frame(screen, img)
+            pygame.display.flip()
     except Exception:
-        log.exception("Erro ao exibir splash no framebuffer")
-        try:
-            with open("/dev/fb0", "wb") as fb:
-                fb.write(b"\x00" * (1366 * 768 * 2))
-        except OSError:
-            pass
+        log.exception("Erro durante reprodução da intro")
+        _show_splash(screen, splash_path)
+    finally:
+        player.close_player()
+
+    log.info("Intro encerrada")
+
+
+def _blit_frame(screen: pygame.Surface, img) -> None:
+    w, h = img.get_size()
+    data = img.to_bytearray()[0]
+    pitch = img.get_linesizes()[0]
+
+    # frombuffer exige linhas contíguas; remove padding de alinhamento se houver
+    if pitch != w * 3:
+        data = b"".join(bytes(data[i * pitch : i * pitch + w * 3]) for i in range(h))
+
+    surf = pygame.image.frombuffer(data, (w, h), "RGB")
+    if (w, h) != screen.get_size():
+        surf = pygame.transform.scale(surf, screen.get_size())
+    screen.blit(surf, (0, 0))
+
+
+def _show_splash(screen: pygame.Surface, splash_path: str | None) -> None:
+    if not splash_path or not os.path.exists(splash_path):
+        return
+    img = pygame.image.load(splash_path).convert()
+    img = pygame.transform.scale(img, screen.get_size())
+    screen.blit(img, (0, 0))
+    pygame.display.flip()
 
 
 _KDSETMODE = 0x4B3A
@@ -71,7 +77,7 @@ _KD_GRAPHICS = 0x01
 _KD_TEXT = 0x00
 
 
-def _hide_tty() -> None:
+def hide_tty() -> None:
     try:
         with open("/dev/tty1", "w") as tty:
             tty.write("\033[?25l\033[2J\033[H")

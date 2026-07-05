@@ -6,7 +6,11 @@ set -e
 INSTALL_DIR="/home/douglasdans/ps1-osd-laucher"
 
 echo ">>> Instalando dependências..."
-sudo apt install -y python3-pygame python3-pil python3-numpy mpv
+sudo apt install -y python3-pygame python3-venv
+
+echo ">>> Criando venv (reaproveita pygame do apt)..."
+python3 -m venv --system-site-packages "$INSTALL_DIR/venv"
+"$INSTALL_DIR/venv/bin/pip" install "ffpyplayer>=4.5.3"
 
 echo ">>> Copiando services..."
 sudo cp "$INSTALL_DIR/systemd/ps1-osd-laucher.service" /etc/systemd/system/

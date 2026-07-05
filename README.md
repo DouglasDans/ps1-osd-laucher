@@ -25,9 +25,9 @@ Built with Python and pygame, it runs over KMSDRM (direct framebuffer) on the Pi
 ```
 Boot
  └── systemd: git pull (auto-update)
-      └── python3 launcher.py
-            ├── mpv: plays intro.mp4 (if present)
-            └── pygame: OSD menu
+      └── venv/bin/python3 launcher.py
+            └── pygame: owns the display from boot to shutdown
+                  ├── plays intro.mp4 (ffpyplayer, if present)
                   ├── reads apps.ini
                   ├── controller navigation
                   └── launches selected app
@@ -48,10 +48,9 @@ Boot
 
 ### Dependencies
 ```
-python3-pygame
-python3-pil
-python3-numpy
-mpv
+python3-pygame   (apt)
+python3-venv     (apt)
+ffpyplayer       (pip, inside the project venv — bundles its own ffmpeg)
 ```
 
 ## Project Structure
@@ -129,7 +128,8 @@ bash install.sh
 ```
 
 The installer:
-- Installs `python3-pygame`, `python3-pil`, `python3-numpy`, and `mpv`
+- Installs `python3-pygame` and `python3-venv` via apt
+- Creates a venv (with system site packages) and installs `ffpyplayer` into it
 - Copies the systemd service to `/etc/systemd/system/`
 - Grants passwordless `shutdown`/`reboot` permission
 - Enables and starts the service
@@ -155,7 +155,8 @@ sudo systemctl restart ps1-osd-launcher
 
 ```bash
 # Install dependencies
-sudo apt install python3-pygame python3-pil python3-numpy mpv
+sudo apt install python3-pygame
+pip install ffpyplayer
 
 # Run
 python3 launcher.py

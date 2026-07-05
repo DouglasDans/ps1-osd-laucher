@@ -9,7 +9,7 @@ This file guides AI assistants (Claude Code, Copilot, etc.) working in this repo
 A minimalist launcher with a PlayStation 1 BIOS-style OSD, built in Python + pygame. It runs on **Raspberry Pi OS Lite** with no desktop environment, using KMSDRM for direct framebuffer rendering. On Linux desktops or WSL, it opens as a regular pygame window for development.
 
 The launcher:
-1. Plays a Sony-style intro video (`assets/intro.mp4`) via mpv
+1. Plays a Sony-style intro video (`assets/intro.mp4`) inside pygame via ffpyplayer
 2. Shows a controller-navigable menu styled after the PS1 BIOS
 3. Reads app entries from `apps.ini`
 4. Launches the selected app as a subprocess, then returns to the menu
@@ -24,7 +24,7 @@ The launcher:
 | Language         | Python 3.11+                            |
 | Rendering        | pygame 2.5+ (SDL2)                      |
 | Display (Pi)     | `SDL_VIDEODRIVER=kmsdrm` (no X11)       |
-| Video playback   | mpv via subprocess                      |
+| Video playback   | ffpyplayer (frames blitted to pygame; audio via its own SDL) |
 | Controller input | `pygame.joystick` + SDL_GameControllerDB |
 | App config       | `configparser` (INI format)             |
 | Boot integration | systemd service unit                    |
@@ -48,7 +48,7 @@ ps1-osd-launcher/
 │       └── PressStart2P.ttf
 ├── src/
 │   ├── config.py      # Reads apps.ini → list of (label, command)
-│   ├── intro.py       # Plays intro.mp4 via mpv subprocess
+│   ├── intro.py       # Plays intro.mp4 inside pygame via ffpyplayer
 │   ├── controller.py  # Normalizes joystick + keyboard events
 │   └── menu.py        # OSD menu loop, rendering, app launch
 └── systemd/
@@ -71,11 +71,12 @@ ps1-osd-launcher/
 - No external dependencies beyond stdlib
 
 ### `src/intro.py`
-- Checks for `assets/intro.mp4` before attempting playback
-- Pi: `mpv --vo=drm --fullscreen assets/intro.mp4`
-- Dev: `mpv --fullscreen assets/intro.mp4`
-- Uses `subprocess.run()` — blocks until video ends
-- Silently skips if file is absent
+- Receives the already-created pygame screen — the launcher owns the display from boot, so there is no mpv→pygame handoff (and no TTY flash)
+- Decodes `assets/intro.mp4` with `ffpyplayer.player.MediaPlayer` (rgb24 frames blitted to the screen; audio played by ffpyplayer's own SDL)
+- Blocks until `get_frame()` returns `eof`; the last video frame stays on screen while the menu loads
+- Falls back to a static splash (`assets/last_frame.png`) if the video or ffpyplayer is unavailable — intro playback must never crash the launcher
+- Intro runs **only once, at process startup** — returning from a launched app goes straight back to the menu
+- Also hosts the tty1 KDSETMODE helpers (`hide_tty`/`restore_tty`) used on the Pi
 
 ### `src/controller.py`
 - Initializes the first joystick found via `pygame.joystick`
