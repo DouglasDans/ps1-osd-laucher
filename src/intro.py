@@ -1,6 +1,7 @@
 import fcntl
 import logging
 import os
+import subprocess
 import time
 
 import pygame
@@ -61,6 +62,41 @@ def _blit_frame(screen: pygame.Surface, img) -> None:
     if (w, h) != screen.get_size():
         surf = pygame.transform.scale(surf, screen.get_size())
     screen.blit(surf, (0, 0))
+
+
+def wait_system_ready(timeout: float = 30.0) -> None:
+    """Segura no frame atual até o boot do sistema concluir (só no Pi).
+
+    O launcher sobe cedo no boot; aqui esperamos o systemd sair de
+    "starting" antes de liberar o menu. Qualquer outro estado (running,
+    degraded, erro) libera — o menu nunca pode ficar refém de um unit
+    quebrado ou de rede lenta.
+    """
+    if not os.path.exists("/dev/fb0"):
+        return
+
+    t0 = time.monotonic()
+    state = "unknown"
+    while time.monotonic() - t0 < timeout:
+        try:
+            result = subprocess.run(
+                ["systemctl", "is-system-running"],
+                capture_output=True, text=True, timeout=5,
+            )
+            state = result.stdout.strip() or "unknown"
+        except (OSError, subprocess.TimeoutExpired):
+            state = "unknown"
+
+        if state != "starting":
+            break
+
+        pygame.event.get()
+        time.sleep(0.5)
+
+    log.info(
+        "Sistema pronto: estado=%s, aguardado=%.1fs",
+        state, time.monotonic() - t0,
+    )
 
 
 def _show_splash(screen: pygame.Surface, splash_path: str | None) -> None:

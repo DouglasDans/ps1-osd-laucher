@@ -1,6 +1,13 @@
 [Unit]
 Description=PS1 OSD Laucher
-After=basic.target
+# Sobe o mais cedo possível: só espera filesystem + udev (necessários
+# para /dev/dri e input). Sem DefaultDependencies o unit não esperaria
+# shutdown.target — Conflicts/Before garantem parada ordenada.
+DefaultDependencies=no
+After=local-fs.target systemd-udevd.service
+Wants=local-fs.target
+Conflicts=shutdown.target
+Before=shutdown.target
 
 [Service]
 Type=simple
@@ -9,8 +16,10 @@ WorkingDirectory=/home/douglasdans/ps1-osd-laucher
 Environment=SDL_VIDEODRIVER=kmsdrm
 Environment=SDL_FBDEV=/dev/fb0
 ExecStart=/home/douglasdans/ps1-osd-laucher/venv/bin/python3 /home/douglasdans/ps1-osd-laucher/launcher.py
+# Se o DRM/ALSA ainda não existirem no boot antecipado, o SDL falha e a
+# re-tentativa em 1s cobre a janela até o udev criar os devices.
 Restart=on-failure
-RestartSec=3
+RestartSec=1
 
 [Install]
 WantedBy=multi-user.target

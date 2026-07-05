@@ -76,6 +76,8 @@ ps1-osd-launcher/
 - Blocks until `get_frame()` returns `eof`; the last video frame stays on screen while the menu loads
 - Falls back to a static splash (`assets/last_frame.png`) if the video or ffpyplayer is unavailable — intro playback must never crash the launcher
 - Intro runs **only once, at process startup** — returning from a launched app goes straight back to the menu
+- Playback follows the asset's frame rate (no fixed tick) — swapping in a 60fps `intro.mp4` requires no code change
+- `wait_system_ready()` gates the menu after the intro: on the Pi it holds the last frame until `systemctl is-system-running` leaves `starting` (30s timeout) — the launcher unit starts early in boot (`DefaultDependencies=no`, after local-fs + udev), so the system may still be booting behind the intro
 - Also hosts the tty1 KDSETMODE helpers (`hide_tty`/`restore_tty`) used on the Pi
 
 ### `src/controller.py`

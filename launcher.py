@@ -6,7 +6,7 @@ import pygame
 
 from src import controller, logger
 from src.config import load_apps
-from src.intro import hide_tty, play_intro, restore_tty
+from src.intro import hide_tty, play_intro, restore_tty, wait_system_ready
 from src.menu import run as run_menu
 
 log = logging.getLogger("ps1.launcher")
@@ -59,6 +59,7 @@ def main() -> None:
     pygame.mouse.set_visible(False)
 
     play_intro(screen, INTRO_VIDEO, SPLASH_IMAGE)
+    wait_system_ready()
 
     controller.init()
     run_menu(screen, apps)

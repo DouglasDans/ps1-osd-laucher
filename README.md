@@ -131,8 +131,13 @@ The installer:
 - Installs `python3-pygame` and `python3-venv` via apt
 - Creates a venv (with system site packages) and installs `ffpyplayer` into it
 - Copies the systemd service to `/etc/systemd/system/`
-- Grants passwordless `shutdown`/`reboot` permission
+- Grants passwordless `shutdown`/`reboot`/launcher-restart permission
+- Silences the boot for a console-like startup:
+  - `disable_splash=1` in `/boot/firmware/config.txt` (skips the rainbow splash)
+  - `quiet loglevel=3 logo.nologo vt.global_cursor_default=0` in `/boot/firmware/cmdline.txt` (hides kernel text and cursor; a backup is kept at `cmdline.txt.bak` — restore it to revert)
 - Enables and starts the service
+
+The launcher service starts right after filesystems and udev are up (before the rest of the boot). After the intro ends, the launcher holds on the last frame until `systemctl is-system-running` leaves `starting` (30s safety timeout), then shows the menu.
 
 ### 5. Disable any previous launcher (if applicable)
 

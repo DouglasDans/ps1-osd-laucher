@@ -6,8 +6,9 @@ Wants=network-online.target
 [Service]
 Type=oneshot
 User=douglasdans
-ExecStart=/usr/bin/git -C /home/douglasdans/ps1-osd-laucher pull
-ExecStartPost=/usr/bin/systemctl restart ps1-osd-laucher
+# Só reinicia o launcher se o pull trouxe commit novo — um restart
+# incondicional mataria a intro em todo boot com rede.
+ExecStart=/bin/bash -c 'cd /home/douglasdans/ps1-osd-laucher && before=$(git rev-parse HEAD) && git pull && { [ "$before" = "$(git rev-parse HEAD)" ] || sudo systemctl restart ps1-osd-laucher; }'
 
 [Install]
 WantedBy=multi-user.target
