@@ -17,7 +17,7 @@ sudo cp "$INSTALL_DIR/systemd/ps1-osd-laucher.service" /etc/systemd/system/
 sudo cp "$INSTALL_DIR/systemd/ps1-osd-update.service" /etc/systemd/system/
 
 echo ">>> Permissões sudo (shutdown/reboot/restart do launcher)..."
-echo "douglasdans ALL=(ALL) NOPASSWD: /sbin/shutdown, /sbin/reboot, /usr/bin/systemctl restart ps1-osd-laucher" | sudo tee /etc/sudoers.d/ps1-osd-laucher > /dev/null
+echo "douglasdans ALL=(ALL) NOPASSWD: /sbin/shutdown, /sbin/reboot, /usr/bin/systemctl restart ps1-osd-laucher, /usr/bin/cp $INSTALL_DIR/systemd/ps1-osd-laucher.service /etc/systemd/system/ps1-osd-laucher.service, /usr/bin/cp $INSTALL_DIR/systemd/ps1-osd-update.service /etc/systemd/system/ps1-osd-update.service, /usr/bin/systemctl daemon-reload" | sudo tee /etc/sudoers.d/ps1-osd-laucher > /dev/null
 
 echo ">>> Boot silencioso (firmware)..."
 BOOT_CFG=/boot/firmware/config.txt
