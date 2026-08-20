@@ -18,16 +18,17 @@ IS_PI = os.path.exists("/dev/fb0")
 
 PS1_FONT_SHEET = "assets/ps1_font_sheet.png"
 PS1_FONT_JSON = "assets/ps1_font.json"
-BG_PATH = "assets/ps1-bios.png"
+BG_PATH = "assets/ps1-bios.jpg"
 MAIN_MENU_IMG_PATH = "assets/main-menu.png"
 SPLASH_DIR = "assets/items-splash"
+CURSOR_PATH = "assets/cursor.png"
 
 WIDTH, HEIGHT = 1920, 1080
 
-# Uppercase glyphs are ~70px tall in the sprite sheet.
+# Uppercase glyphs are ~280px tall in the sprite sheet (4x upscaled, fd172ac).
 # Scale to match the original font sizes (42px / 58px).
-FONT_SCALE = 0.70
-FONT_SCALE_SELECTED = 0.87
+FONT_SCALE = 0.175
+FONT_SCALE_SELECTED = 0.2175
 ITEM_X = 210
 ITEM_START_Y = 320
 ITEM_SPACING = 160
@@ -41,6 +42,9 @@ SPLASH_BASE_H = 130
 VISIBLE_COUNT = 4
 SLIDE_DURATION = 120
 
+CURSOR_HEIGHT = 50
+CURSOR_Y_OVERLAP_RATIO = 0.5
+
 
 def _load_splashes(apps: list) -> list[pygame.Surface]:
     paths = sorted(glob.glob(f"{SPLASH_DIR}/*.png"))
@@ -51,6 +55,12 @@ def _load_splashes(apps: list) -> list[pygame.Surface]:
         img = pygame.image.load(path).convert_alpha()
         result.append(pygame.transform.smoothscale(img, (SPLASH_BASE_W, SPLASH_BASE_H)))
     return result
+
+
+def _cursor_position(splash_x: int, splash_w: int, text_y: int, text_h: int, cursor_h: int) -> tuple[int, int]:
+    cursor_x = splash_x + splash_w // 2
+    cursor_y = text_y + text_h - int(cursor_h * CURSOR_Y_OVERLAP_RATIO)
+    return cursor_x, cursor_y
 
 
 def run(screen: pygame.Surface, apps: list[tuple[str, str]]) -> None:
@@ -66,6 +76,10 @@ def run(screen: pygame.Surface, apps: list[tuple[str, str]]) -> None:
     main_menu_img = pygame.transform.scale(_raw_menu_img, (box_w, box_h))
 
     splashes = _load_splashes(apps)
+
+    cursor_raw = pygame.image.load(CURSOR_PATH).convert_alpha()
+    cursor_w = int(cursor_raw.get_width() * CURSOR_HEIGHT / cursor_raw.get_height())
+    cursor_img = pygame.transform.smoothscale(cursor_raw, (cursor_w, CURSOR_HEIGHT))
 
     selected = 0
     scroll_offset = 0
@@ -123,7 +137,7 @@ def run(screen: pygame.Surface, apps: list[tuple[str, str]]) -> None:
                     transitioning = True
                     transition_start = now
 
-        _draw(screen, bg, font, main_menu_img, apps, splashes, selected, scroll_offset, now, slide_start, slide_dir, selected_color)
+        _draw(screen, bg, font, main_menu_img, apps, splashes, cursor_img, selected, scroll_offset, now, slide_start, slide_dir, selected_color)
         pygame.display.flip()
         clock.tick(30)
 
@@ -160,6 +174,7 @@ def _draw(
     main_menu_img: pygame.Surface,
     apps: list[tuple[str, str]],
     splashes: list[pygame.Surface],
+    cursor_img: pygame.Surface,
     selected: int,
     scroll_offset: int,
     now: int,
@@ -201,3 +216,7 @@ def _draw(
         color = selected_color if is_selected else COLOR_TEXT
         font.render(screen, text, text_x + SHADOW_OFFSET[0], text_y + SHADOW_OFFSET[1], color=COLOR_SHADOW, scale=scale)
         font.render(screen, text, text_x, text_y, color=color, scale=scale)
+
+        if is_selected:
+            cursor_x, cursor_y = _cursor_position(ITEM_X, splash_w, text_y, text_h, cursor_img.get_height())
+            screen.blit(cursor_img, (cursor_x, cursor_y))
